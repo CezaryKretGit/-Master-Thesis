@@ -6,7 +6,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='master-thesis',
-    version='0-1',
+    version='0-3',
     description='',
     author_='Cezary Kręt',
     author_email='CezaryKret0@gmail.com',

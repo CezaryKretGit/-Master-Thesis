@@ -14,21 +14,55 @@ def _ignore_cols(data: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     return data.drop(columns=columns, inplace=False, errors='ignore')
 
 
+class Param:
+    def __init__(self):
+        self.super_list = []
+
+    def append(self, val):
+        self.super_list.append(val)
+
+
+def cluster_param_builder(params_list: list):
+    params = Param()
+
+    param = params_list.pop(0)
+
+    for param_value in param:
+        _param_builder(params_list.copy(), [param_value, ], params)
+
+    return params.super_list
+
+
+def _param_builder(params_list: list, element_list: list, super_list):
+    if len(params_list) == 0:
+        super_list.append(element_list)
+        return
+
+    param = params_list.pop(0)
+
+    for param_value in param:
+        _param_builder(params_list.copy(), element_list + [param_value, ], super_list)
+
+
 class Pipeline:
 
     def __init__(self, data_transform_function: Callable[[], (pd.DataFrame, pd.DataFrame)],
                  regression_models: list, cluster_models: list):
         self.regression_models_with_params = regression_models
-        self.cluster_models = cluster_models
+        self.cluster_models_with_params = cluster_models
         self.train_data, self.test_data = data_transform_function()
         self.results = None
 
     def full_training(self):
 
         results = []
-        for cluster_model in self.cluster_models:
-            for regression_model, params in self.regression_models_with_params:
-                results.append(self.experiment(cluster_model, regression_model, params))
+        print(self.cluster_models_with_params)
+        for cluster_builder, cluster_all_params in self.cluster_models_with_params:
+            for cluster_params in cluster_param_builder(cluster_all_params):
+                print(cluster_params)
+                for regression_model, params in self.regression_models_with_params:
+                    results.append(list(self.experiment(cluster_builder(cluster_params), regression_model, params)) +
+                                   [cluster_params,])
 
         return results
 
@@ -61,10 +95,11 @@ class Pipeline:
 
         data = [[result_reg.estimator,
                  result_reg.best_score_, result_reg.best_params_,
-                 result_clu.best_score_, result_clu.best_params_]
-                for result_reg, result_clu in results]
+                 result_clu.best_score_, result_clu.best_params_, cluster_params]
+                for result_reg, result_clu, cluster_params in results]
 
-        columns = ['model', 'regression_only_score', 'regression_only_params', 'clustering_score', 'clustering_params']
+        columns = ['model', 'regression_only_score', 'regression_only_params',
+                   'with_clustering_score', 'with_clustering_params', 'cluster_params']
         return pd.DataFrame(data=data, columns=columns)
 
 

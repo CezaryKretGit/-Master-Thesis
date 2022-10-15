@@ -1,2 +1,2 @@
 from thesis.core import Pipeline
-from thesis.models import prepare_DicisionTreeRegressor
+from thesis.models import *
