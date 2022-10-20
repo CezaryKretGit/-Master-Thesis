@@ -19,7 +19,7 @@ def test_basic_pipeline():
     results = pipeline.full_training()
     print(results)
     print(results[0])
-    results_df = pipeline.results_as_df(results)
+    results_df = pipeline.save_results_as_df(results)
     print(results_df)
     print(results_df.iloc[0])
 
