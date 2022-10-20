@@ -3,7 +3,8 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.cluster import KMeans
 from sklearn.datasets import load_diabetes
 import pandas as pd
-from thesis import Pipeline, prepare_DicisionTreeRegressor, kmeans_builder, kmeans_get_params
+from thesis import Pipeline
+from thesis.models import KMeansBuilder, prepare_DicisionTreeRegressor
 
 
 def prepare_testing_data():
@@ -17,7 +18,7 @@ def test_basic_pipeline():
     pipeline = Pipeline(prepare_testing_data,
                         [(DecisionTreeRegressor(), {'max_depth': [3, 6, 9]}),
                          (DecisionTreeRegressor(), {'max_depth': [5, 8]})],
-                        [(kmeans_builder, kmeans_get_params()), ])
+                        [KMeansBuilder(), ])
     results_df = pipeline.results_as_df(pipeline.full_training())
     print(results_df.iloc[0])
 
@@ -25,7 +26,7 @@ def test_basic_pipeline():
 def test_pipeline_with_basic_model_creator():
     pipeline = Pipeline(prepare_testing_data,
                         [prepare_DicisionTreeRegressor(), prepare_DicisionTreeRegressor()],
-                        [(kmeans_builder, [[2, 3, 4, 5, 6, 8], [1, 10, 100, 1000]]), ])
+                        [KMeansBuilder(), ])
     results_df = pipeline.results_as_df(pipeline.full_training())
     print(results_df.iloc[0])
 

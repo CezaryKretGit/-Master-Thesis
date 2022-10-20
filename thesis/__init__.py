@@ -1,2 +1,1 @@
-from thesis.core import Pipeline
-from thesis.models import *
+from thesis.core import Pipeline, ModelBuilder

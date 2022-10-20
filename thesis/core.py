@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from abc import abstractmethod
 from sklearn.model_selection import GridSearchCV
 import numpy as np
 import pandas as pd
@@ -44,10 +45,41 @@ def _param_builder(params_list: list, element_list: list, super_list):
         _param_builder(params_list.copy(), element_list + [param_value, ], super_list)
 
 
+class ModelBuilder:
+
+    @abstractmethod
+    def get_model(self, params):
+        pass
+
+    @abstractmethod
+    def get_param_lists(self):
+        pass
+
+    def _cluster_param_builder(self, params_list: list):
+        params = Param()
+        print(params_list)
+        param = params_list.pop(0)
+
+        for param_value in param:
+            self._param_builder(params_list.copy(), [param_value, ], params)
+
+        return params.super_list
+
+    def _param_builder(self, params_list: list, element_list: list, super_list):
+        if len(params_list) == 0:
+            super_list.append(element_list)
+            return
+
+        param = params_list.pop(0)
+
+        for param_value in param:
+            self._param_builder(params_list.copy(), element_list + [param_value, ], super_list)
+
+
 class Pipeline:
 
     def __init__(self, data_transform_function: Callable[[], (pd.DataFrame, pd.DataFrame)],
-                 regression_models: list, cluster_models: list):
+                 regression_models: list, cluster_models: list[ModelBuilder]):
         self.regression_models_with_params = regression_models
         self.cluster_models_with_params = cluster_models
         self.train_data, self.test_data = data_transform_function()
@@ -57,12 +89,12 @@ class Pipeline:
 
         results = []
         print(self.cluster_models_with_params)
-        for cluster_builder, cluster_all_params in self.cluster_models_with_params:
-            for cluster_params in cluster_param_builder(cluster_all_params):
+        for cluster_builder in self.cluster_models_with_params:
+            for cluster_params in cluster_builder.get_param_lists():
                 print(cluster_params)
                 for regression_model, params in self.regression_models_with_params:
-                    results.append(list(self.experiment(cluster_builder(cluster_params), regression_model, params)) +
-                                   [cluster_params,])
+                    results.append(list(self.experiment(cluster_builder.get_model(cluster_params), regression_model, params)) +
+                                   [cluster_params, ])
 
         return results
 
