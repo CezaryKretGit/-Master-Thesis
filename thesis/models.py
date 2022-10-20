@@ -1,6 +1,10 @@
+import keras
+from keras import layers
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.cluster import KMeans
 from thesis import ModelBuilder
+from keras.optimizers import Adam
+from keras.wrappers.scikit_learn import KerasRegressor
 
 
 class KMeansBuilder(ModelBuilder):
@@ -32,5 +36,27 @@ class DecisionTreeBuilder(ModelBuilder):
         return super()._cluster_param_builder(params)
 
 
+class NeutralNetworkBuilder(ModelBuilder):
+    DATA_NUMBER_OF_FEATURES = 13
+    SECOND_LAYER_SIZE_INDEX = 0
 
+    def get_model(self, params):
+        size = params[self.SECOND_LAYER_SIZE_INDEX]
 
+        def build_model():
+            model = keras.Sequential([
+                layers.Input(shape=(self.DATA_NUMBER_OF_FEATURES,)),
+                layers.Dense(25, kernel_initializer='normal', activation='relu'),
+                layers.Dense(1, kernel_initializer='normal')
+            ])
+
+            model.compile(loss='mean_squared_error', optimizer='adam')
+            return model
+
+        return KerasRegressor(build_fn=build_model, nb_epoch=100, batch_size=10)
+
+    def get_param_lists(self):
+        params = []
+        # layers_size
+        params.insert(self.SECOND_LAYER_SIZE_INDEX, [4, 8, 16])
+        return super()._cluster_param_builder(params)

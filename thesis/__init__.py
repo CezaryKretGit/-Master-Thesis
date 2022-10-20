@@ -1,2 +1,2 @@
 from thesis.core import Pipeline, ModelBuilder
-from thesis.models import KMeansBuilder, DecisionTreeBuilder
+from thesis.models import KMeansBuilder, DecisionTreeBuilder, NeutralNetworkBuilder

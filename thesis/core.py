@@ -84,9 +84,10 @@ class Pipeline:
     def experiment(self, regression_model, train_data=None):
         train_feats, train_labels = self._set_data_for_experiment(train_data)
 
+        train_feats['cluster'] = 0
         # regression learning
         results = cross_validate(estimator=regression_model, X=train_feats, y=train_labels,
-                                 cv=5, scoring='r2')
+                                 cv=5, scoring='neg_mean_squared_error')
 
         return results
 
@@ -99,7 +100,7 @@ class Pipeline:
 
         # regression learning clustered data
         results = cross_validate(estimator=regression_model, X=train_feats, y=train_labels,
-                                 cv=5, scoring='r2')
+                                 cv=5, scoring='neg_mean_squared_error')
 
         return results
 
