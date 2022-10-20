@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from abc import abstractmethod
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import cross_validate
 import numpy as np
 import pandas as pd
 
@@ -57,7 +58,6 @@ class ModelBuilder:
 
     def _cluster_param_builder(self, params_list: list):
         params = Param()
-        print(params_list)
         param = params_list.pop(0)
 
         for param_value in param:
@@ -79,7 +79,7 @@ class ModelBuilder:
 class Pipeline:
 
     def __init__(self, data_transform_function: Callable[[], (pd.DataFrame, pd.DataFrame)],
-                 regression_models: list, cluster_models: list[ModelBuilder]):
+                 regression_models: list[ModelBuilder], cluster_models: list[ModelBuilder]):
         self.regression_models_with_params = regression_models
         self.cluster_models_with_params = cluster_models
         self.train_data, self.test_data = data_transform_function()
@@ -88,17 +88,22 @@ class Pipeline:
     def full_training(self):
 
         results = []
-        print(self.cluster_models_with_params)
+        # for each cluster model
         for cluster_builder in self.cluster_models_with_params:
-            for cluster_params in cluster_builder.get_param_lists():
-                print(cluster_params)
-                for regression_model, params in self.regression_models_with_params:
-                    results.append(list(self.experiment(cluster_builder.get_model(cluster_params), regression_model, params)) +
-                                   [cluster_params, ])
+            # for each regression model
+            for regression_builder in self.regression_models_with_params:
+                # for each cluster parameters
+                for cluster_params in cluster_builder.get_param_lists():
+                    # for each regression parameters
+                    for regression_params in regression_builder.get_param_lists():
+                        # do an experiment
+                        results.append(list(self.experiment(cluster_builder.get_model(cluster_params),
+                                                            regression_builder.get_model(regression_params))) +
+                                       [cluster_params, regression_params])
 
         return results
 
-    def experiment(self, cluster_model, regression_model, regression_vals, train_data=None):
+    def experiment(self, cluster_model, regression_model, train_data=None):
         if train_data is None:
             train_data = self.train_data
         train_feats, train_labels = _ignore_cols(train_data, ['labels', 'cluster']), train_data['labels']
@@ -108,16 +113,13 @@ class Pipeline:
         train_data['cluster'] = cluster_model.predict(train_feats)
 
         # regression learning not clustered
-        grid_search = GridSearchCV(estimator=regression_model, param_grid=regression_vals, scoring='r2',
-                                   cv=6, refit=True, return_train_score=True)
-        only_regression_results = grid_search.fit(train_feats, train_labels)
+        only_regression_results = cross_validate(estimator=regression_model, X=train_feats, y=train_labels,
+                                                 cv=5, scoring='r2')
 
         # regression learning clustered data
         train_enriched_feats = _ignore_cols(train_data, ['labels'])
-
-        grid_search = GridSearchCV(estimator=regression_model, param_grid=regression_vals, scoring='r2',
-                                   cv=6, refit=True, return_train_score=True)
-        with_clustering_results = grid_search.fit(train_enriched_feats, train_labels)
+        with_clustering_results = cross_validate(estimator=regression_model, X=train_enriched_feats, y=train_labels,
+                                                 cv=5, scoring='r2')
 
         return only_regression_results, with_clustering_results
 
