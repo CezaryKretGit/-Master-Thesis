@@ -1,10 +1,8 @@
-import sklearn
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.cluster import KMeans
+
 from sklearn.datasets import load_diabetes
 import pandas as pd
 from thesis import Pipeline
-from thesis.models import KMeansBuilder, prepare_DicisionTreeRegressor, DecisionTreeBuilder
+from thesis import KMeansBuilder, DecisionTreeBuilder
 
 
 def prepare_testing_data():
@@ -21,17 +19,9 @@ def test_basic_pipeline():
     results = pipeline.full_training()
     print(results)
     print(results[0])
-    #results_df = pipeline.results_as_df(pipeline.full_training())
-    #print(results_df.iloc[0])
-
-
-def test_pipeline_with_basic_model_creator():
-    pipeline = Pipeline(prepare_testing_data,
-                        [prepare_DicisionTreeRegressor(), prepare_DicisionTreeRegressor()],
-                        [KMeansBuilder(), ])
-    results_df = pipeline.results_as_df(pipeline.full_training())
+    results_df = pipeline.results_as_df(results)
+    print(results_df)
     print(results_df.iloc[0])
-
 
 
 if __name__ == '__main__':
