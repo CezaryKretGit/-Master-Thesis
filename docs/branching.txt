@@ -1,3 +1,4 @@
 # Hello!
 This is changed line in master
+This is new middle line from testing
 This is the last line
